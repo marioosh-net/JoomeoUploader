@@ -21,6 +21,8 @@ public class JoomeoClient {
   private String sessionId;
   private String apikey;
   private XmlRpcClient client;
+  
+  private String collectionId;
 
   JoomeoClient() {
     try {
@@ -30,7 +32,8 @@ public class JoomeoClient {
       //client.setTransportFactory(new XmlRpcCommonsTransportFactory(client));
       client.setConfig(config);
     } catch (Exception ex) {
-      ex.printStackTrace();
+      //ex.printStackTrace();
+      System.out.println(ex.getMessage());
     }
   }
 
@@ -50,15 +53,17 @@ public class JoomeoClient {
       HashMap result = (HashMap) client.execute("joomeo.session.init", params2);
       this.sessionId = (String) result.get("sessionid");
 
-    /*Iterator j = result.keySet().iterator();
-    while(j.hasNext()) {
-    Object key = j.next();
-    Object value = result.get(key);
-    System.out.println(key + "," + value);
-    }*/
+      /*Iterator j = result.keySet().iterator();
+      while(j.hasNext()) {
+      Object key = j.next();
+      Object value = result.get(key);
+      System.out.println(key + "," + value);
+      }*/
+      System.out.println("Session initialized (idsession:" + this.sessionId + ")");
 
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println(e.getMessage());
+      //e.printStackTrace();
     }
   }
 
@@ -79,8 +84,8 @@ public class JoomeoClient {
       for (int i = 0; i < collections.length; i++) {
         HashMap collection = (HashMap) (collections[i]);
 
-        System.out.println(collection.get("label"));
-        if (collection.get("label").equals(collectionName) ) {
+        //System.out.println(collection.get("label"));
+        if (collection.get("label").equals(collectionName)) {
           return (String) collection.get("collectionid");
         }
 
@@ -88,7 +93,8 @@ public class JoomeoClient {
       return null;
 
     } catch (Exception e) {
-      e.printStackTrace();
+      //e.printStackTrace();
+      System.out.println(e.getMessage());
       return null;
     }
 
@@ -107,11 +113,12 @@ public class JoomeoClient {
       for (int i = 0; i < collections.length; i++) {
         HashMap collection = (HashMap) (collections[i]);
         //{allowdownload=1, folderid=, orderby=date, label=nowa kolekcja, allowupload=0, createddate=1240402322, collectionid=OTdlYTc3NjAAC%2FeIOBrZRQ%3D%3D%0D%0A, public=0, date=1240402322}
-        System.out.println("\""+collection.get("label") + "\" : " + collection.get("collectionid"));
+        System.out.println("\"" + collection.get("label") + "\" : " + collection.get("collectionid"));
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      //e.printStackTrace();
+      System.out.println(e.getMessage());
     }
   }
 
@@ -133,7 +140,8 @@ public class JoomeoClient {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      //e.printStackTrace();
+      System.out.println(e.getMessage());
     }
   }
 
@@ -148,7 +156,8 @@ public class JoomeoClient {
       HashMap result = (HashMap) client.execute("joomeo.user.getNumberOfFiles", params2);
       System.out.println(result.get("nbfiles"));
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println(e.getMessage());
+      //e.printStackTrace();
     }
   }
 
@@ -163,9 +172,12 @@ public class JoomeoClient {
     try {
       HashMap result = (HashMap) client.execute("joomeo.user.addCollection", params2);
       //System.out.println("NEW COLLECTION ID = " + result.get("collectionid"));
-      return (String) result.get("collectionid");
+      String collectionId = (String) result.get("collectionid");
+      System.out.println("New collecion \"" + label + "\" created (collectionid: " + collectionId + ")");
+      return collectionId;
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println(e.getMessage());
+      //e.printStackTrace();
       return null;
     }
   }
@@ -192,7 +204,7 @@ public class JoomeoClient {
     }
   }
 
-  void uploadBinary(String path, String collectionName) {
+  void uploadBinary(String path, String collectionName, boolean checkCollection) {
     try {
 
       File file = new File(path);
@@ -219,7 +231,19 @@ public class JoomeoClient {
 
       if (uploadId != null) {
 
-        String collectionId = this.addCollection(collectionName);
+        String collectionId;
+        boolean newCollection = false;
+        if (checkCollection) {
+          newCollection = false;
+          collectionId = this.getCollectionId(collectionName);
+          if (collectionId == null) {
+            collectionId = this.addCollection(collectionName);
+            newCollection = true;
+          }
+          this.collectionId = collectionId;
+        } else {
+          collectionId = this.collectionId;
+        }
 
         if (collectionId != null) {
           // teraz save pliku
@@ -234,11 +258,19 @@ public class JoomeoClient {
 
           result = (HashMap) client.execute("joomeo.user.collection.saveUploadedFile", params3);
           String fileId = (String) result.get("fileid");
+
+          if (newCollection) {
+            System.out.println("File \"" + filename + "\" uploaded to new collection \"" + collectionName + "\"");
+          } else {
+            System.out.println("File \"" + filename + "\" uploaded to existing collection \"" + collectionName + "\"");
+          }
+          System.out.println("Photo url: http://api.joomeo.com/file.php?apikey=" + this.apikey + "&sessionid=" + this.sessionId + "&fileid=" + fileId + "&collectionid=" + collectionId + "&type=large");
         }
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      System.out.println(e.getMessage());
+      //e.printStackTrace();
     }
 
   }
