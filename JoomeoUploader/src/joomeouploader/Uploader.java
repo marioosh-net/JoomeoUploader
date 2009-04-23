@@ -51,7 +51,7 @@ public class Uploader {
 
       } else {
 
-        System.out.println("syntax: java -jar JoomeoUploader.jar <collectionName> <photo.jpg>");
+        System.out.println("syntax: java -jar JoomeoUploader.jar <collectionName> <photo1.jpg> [<photo2.jpg>] [<photo3.jpg>] [...]");
       }
 
 
